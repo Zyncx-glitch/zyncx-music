@@ -14,7 +14,8 @@ async function buscarMusica() {
         </div>`;
 
     try {
-        const response = await fetch(`https://${API_HOST}/v2/search?q=${encodeURIComponent(query)}`, {
+        // AJUSTE: Usamos la ruta /v2/video/search que es la que corresponde a esta API
+        const response = await fetch(`https://${API_HOST}/v2/video/search?q=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'x-rapidapi-key': API_KEY,
@@ -23,20 +24,18 @@ async function buscarMusica() {
         });
 
         const data = await response.json();
-        
-        // LOG PARA DEPURACIÓN: Esto ayuda a ver qué responde la API en la consola (F12)
         console.log("Respuesta de la API:", data);
 
         resultsContainer.innerHTML = "";
 
-        // Intentamos obtener los items de varias formas por si la API cambia el formato
+        // Verificamos si la respuesta trae items (videos)
         const videos = data.items || data.contents || data.data;
 
         if (videos && videos.length > 0) {
             videos.forEach(video => {
-                // Verificamos que sea un video y tenga ID
-                if ((video.type === 'video' || video.id) && video.title) {
-                    const videoId = video.id || video.videoId;
+                // Solo procesamos si tiene ID y título
+                const videoId = video.id || video.videoId;
+                if (videoId && video.title) {
                     const cleanTitle = video.title.replace(/['"]/g, "");
                     const thumb = video.thumbnails && video.thumbnails.length > 0 ? video.thumbnails[0].url : 'https://via.placeholder.com/120x90?text=No+Image';
 
@@ -58,9 +57,9 @@ async function buscarMusica() {
                 }
             });
         } else {
-            // Si la API responde pero no trae videos, mostramos el error técnico para saber qué es
+            // Si el error era por el endpoint, aquí saldrá el mensaje real de la API
             const errorMsg = data.message || "No se encontraron resultados";
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">${errorMsg}. Verifica tu suscripción en RapidAPI.</p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">${errorMsg}. <br> Verifica si escribiste bien o si la API cambió de ruta.</p>`;
         }
 
     } catch (error) {
@@ -79,6 +78,7 @@ async function prepararDescarga(id, titulo) {
         </div>`;
 
     try {
+        // Para detalles también usamos la ruta /v2/video/details
         const response = await fetch(`https://${API_HOST}/v2/video/details?id=${id}`, {
             method: 'GET',
             headers: {
@@ -91,8 +91,8 @@ async function prepararDescarga(id, titulo) {
         let audioLink = "";
 
         if (data && data.formats) {
-            // Buscamos el mejor formato de audio disponible
-            const format = data.formats.find(f => f.mimeType.includes('audio')) || data.formats[0];
+            // Buscamos el formato que contenga audio
+            const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio')) || data.formats.find(f => f.url && f.url.includes('audio'));
             audioLink = format ? format.url : null;
         }
 
@@ -103,17 +103,17 @@ async function prepararDescarga(id, titulo) {
                         <i class="fas fa-check text-green-400 text-2xl"></i>
                     </div>
                     <h3 class="text-lg font-bold mb-8 text-white">${titulo}</h3>
-                    <a href="${audioLink}" target="_blank" download="${titulo}.mp3" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40">
+                    <a href="${audioLink}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40 text-center">
                         <i class="fas fa-cloud-download-alt mr-2"></i> DESCARGAR MP3
                     </a>
                     <button onclick="window.location.reload()" class="mt-8 text-xs text-gray-500 hover:text-white uppercase tracking-widest underline italic">Nueva búsqueda</button>
                 </div>`;
         } else {
-            alert("No se encontró un link de audio directo.");
+            alert("No se encontró un link de audio directo en este video. Prueba con otro.");
             window.location.reload();
         }
     } catch (e) {
-        alert("Error al procesar la descarga.");
+        alert("Error al obtener los detalles de descarga.");
         window.location.reload();
     }
 }
