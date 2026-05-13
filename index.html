@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zyncx Music | Descarga MP3 Gratis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #0f172a; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="text-gray-200 font-sans">
+
+    <!-- Navegación -->
+    <nav class="p-6 flex justify-between items-center max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+            ZYNCX <span class="text-white text-sm font-light tracking-widest">MUSIC</span>
+        </h1>
+        <div class="space-x-6 hidden md:block">
+            <a href="#" class="hover:text-cyan-400 transition">Inicio</a>
+            <a href="#" class="hover:text-cyan-400 transition">Top 100</a>
+            <a href="#" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-full text-sm font-bold transition">Premium</a>
+        </div>
+    </nav>
+
+    <!-- Buscador Principal -->
+    <main class="mt-20 px-4">
+        <div class="max-w-3xl mx-auto text-center">
+            <h2 class="text-4xl md:text-6xl font-extrabold mb-6">Descarga tu música favorita</h2>
+            <p class="text-gray-400 mb-10 text-lg">Sin anuncios molestos, rápido y en máxima calidad.</p>
+            
+            <div class="relative group">
+                <input id="searchInput" type="text" placeholder="Pega el link de YouTube o busca por nombre..." 
+                    class="w-full p-5 pl-8 rounded-2xl bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-xl transition-all shadow-2xl">
+                <button onclick="buscarMusica()" class="absolute right-3 top-3 bg-cyan-500 hover:bg-cyan-400 text-white px-8 py-3 rounded-xl font-bold transition shadow-lg">
+                    <i class="fas fa-search mr-2"></i> Buscar
+                </button>
+            </div>
+        </div>
+
+        <!-- Resultados (Aparecerán aquí) -->
+        <section id="results" class="max-w-4xl mx-auto mt-16 grid gap-4">
+            <!-- Los resultados se inyectarán con JS -->
+        </section>
+    </main>
+
+    <footer class="mt-20 py-10 border-t border-white/10 text-center text-gray-500 text-sm">
+        <p>&copy; 2026 Zyncx Music Project - High Quality Audio</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
