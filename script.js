@@ -14,8 +14,8 @@ async function buscarMusica() {
         </div>`;
 
     try {
-        // Cambiamos a la ruta base /v2/search que es la más común si las otras fallan
-        const response = await fetch(`https://${API_HOST}/v2/search?q=${encodeURIComponent(query)}`, {
+        // Usamos la ruta de búsqueda estándar
+        const response = await fetch(`https://${API_HOST}/v2/video/search?q=${encodeURIComponent(query)}`, {
             method: 'GET',
             headers: {
                 'x-rapidapi-key': API_KEY,
@@ -24,24 +24,20 @@ async function buscarMusica() {
         });
 
         const data = await response.json();
-        console.log("Respuesta búsqueda:", data);
-
         resultsContainer.innerHTML = "";
 
-        // Esta API suele devolver los videos en 'items' o 'contents'
-        const videos = data.items || data.contents || data.videos;
+        const videos = data.items || data.contents;
 
         if (videos && videos.length > 0) {
             videos.forEach(video => {
-                // Verificamos que tenga ID (algunas APIs usan 'id', otras 'videoId')
-                const videoId = video.id || video.videoId;
-                if (videoId && video.title) {
+                const vId = video.id || video.videoId;
+                if (vId && video.title) {
                     const cleanTitle = video.title.replace(/['"]/g, "");
                     const thumb = video.thumbnails ? video.thumbnails[0].url : 'https://via.placeholder.com/150';
 
                     const card = `
                     <div class="glass p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer mb-3 group" 
-                         onclick="prepararDescarga('${videoId}', '${cleanTitle}')">
+                         onclick="prepararDescarga('${vId}', '${cleanTitle}')">
                         <div class="flex items-center gap-4 text-left">
                             <img src="${thumb}" class="w-20 h-14 rounded-lg object-cover shadow-lg border border-white/10">
                             <div class="max-w-[200px] md:max-w-md">
@@ -57,9 +53,8 @@ async function buscarMusica() {
                 }
             });
         } else {
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados. Revisa la ruta de la API en el panel.</p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados.</p>`;
         }
-
     } catch (error) {
         resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de conexión.</p>`;
     }
@@ -75,29 +70,27 @@ async function prepararDescarga(id, titulo) {
         </div>`;
 
     try {
-        const response = await fetch(`https://${API_HOST}/v2/video/details?id=${id}`, {
+        // AJUSTE CLAVE: Usamos exactamente los parámetros del curl que me pasaste
+        const url = `https://${API_HOST}/v2/video/details?videoId=${id}&urlAccess=normal&videos=auto&audios=auto`;
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'x-rapidapi-key': API_KEY,
-                'x-rapidapi-host': API_HOST
+                'x-rapidapi-host': API_HOST,
+                'Content-Type': 'application/json'
             }
         });
 
         const data = await response.json();
-        console.log("Detalles descarga:", data);
-
         let audioUrl = "";
         
-        // Intentamos encontrar el mejor link de audio
-        if (data.formats) {
-            // 1. Buscamos algo que diga audio expresamente
-            const audioFormat = data.formats.find(f => f.mimeType && f.mimeType.includes('audio'));
-            if (audioFormat) {
-                audioUrl = audioFormat.url;
-            } else {
-                // 2. Si no, buscamos cualquier link que funcione (a veces el primero es el video con audio)
-                audioUrl = data.formats[0].url;
-            }
+        // Buscamos en el array de audios que nos devuelve esta configuración
+        if (data.audios && data.audios.items && data.audios.items.length > 0) {
+            audioUrl = data.audios.items[0].url;
+        } else if (data.formats) {
+            const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio'));
+            audioUrl = format ? format.url : null;
         }
 
         if (audioUrl) {
@@ -107,13 +100,13 @@ async function prepararDescarga(id, titulo) {
                         <i class="fas fa-check text-green-400 text-2xl"></i>
                     </div>
                     <h3 class="text-lg font-bold mb-8 text-white">${titulo}</h3>
-                    <a href="${audioUrl}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40">
-                        <i class="fas fa-cloud-download-alt mr-2"></i> DESCARGAR AHORA
+                    <a href="${audioUrl}" target="_blank" download="${titulo}.mp3" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40">
+                        <i class="fas fa-cloud-download-alt mr-2"></i> DESCARGAR MP3
                     </a>
                     <button onclick="window.location.reload()" class="mt-8 text-xs text-gray-500 hover:text-white uppercase tracking-widest underline italic">Nueva búsqueda</button>
                 </div>`;
         } else {
-            alert("No se pudo obtener el link directo. Prueba con otro video.");
+            alert("No se encontró un link de descarga. Intenta con otro video.");
             window.location.reload();
         }
     } catch (e) {
