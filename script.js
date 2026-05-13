@@ -2,7 +2,7 @@ const API_KEY = 'b7e2969cdcmshca5a386054686e0p158a2djsnf9a96c7dc51f';
 const API_HOST = 'youtube-media-downloader.p.rapidapi.com';
 
 async function buscarMusica() {
-    const queryInput = document.getElementById('searchInput').value;
+    const queryInput = document.getElementById('searchInput').value.trim();
     const resultsContainer = document.getElementById('results');
 
     if (!queryInput) return;
@@ -10,37 +10,25 @@ async function buscarMusica() {
     resultsContainer.innerHTML = `
         <div class="text-center py-10">
             <div class="animate-spin inline-block w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full mb-4"></div>
-            <p class="text-cyan-400 font-bold uppercase tracking-widest text-[10px]">Zyncx Search Engine: Buscando...</p>
+            <p class="text-cyan-400 font-bold uppercase tracking-widest text-[10px]">Zyncx Search: Buscando...</p>
         </div>`;
 
-    // Probamos con las 3 rutas más posibles que usa esta API
-    const urls = [
-        `https://${API_HOST}/v2/video/search?q=${encodeURIComponent(queryInput)}`,
-        `https://${API_HOST}/v2/video/search?query=${encodeURIComponent(queryInput)}`,
-        `https://${API_HOST}/v2/search?q=${encodeURIComponent(queryInput)}`
-    ];
-
-    let data = null;
-
     try {
-        for (let url of urls) {
-            console.log("Intentando ruta:", url);
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'x-rapidapi-key': API_KEY,
-                    'x-rapidapi-host': API_HOST
-                }
-            });
-            data = await response.json();
-            
-            // Si la API responde con items, paramos de buscar
-            if (data && (data.items || data.contents) && (data.items?.length > 0 || data.contents?.length > 0)) {
-                break;
+        // Limpiamos la búsqueda de cualquier cosa que no sea texto o espacios
+        const cleanQuery = queryInput.replace(/[^a-zA-Z0-9 ]/g, "");
+        
+        const response = await fetch(`https://${API_HOST}/v2/video/search?q=${encodeURIComponent(cleanQuery)}`, {
+            method: 'GET',
+            headers: {
+                'x-rapidapi-key': API_KEY,
+                'x-rapidapi-host': API_HOST
             }
-        }
+        });
 
+        const data = await response.json();
         resultsContainer.innerHTML = "";
+
+        // La API a veces devuelve 'items', a veces 'contents'
         const videos = data.items || data.contents || [];
 
         if (videos.length > 0) {
@@ -67,26 +55,24 @@ async function buscarMusica() {
                 }
             });
         } else {
-            // Si después de intentar todas las rutas no hay nada, mostramos qué dijo la API
-            console.error("Respuesta final vacía:", data);
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados para "${queryInput}".<br><span class="text-[10px]">Asegúrate de estar suscrito al plan Free en RapidAPI.</span></p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados para "${cleanQuery}".</p>`;
         }
     } catch (error) {
-        resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de red. Intenta de nuevo.</p>`;
+        console.error("Error:", error);
+        resultsContainer.innerHTML = `<p class="text-red-400 text-center">Error al conectar con Zyncx Server.</p>`;
     }
 }
 
-// La función prepararDescarga se queda igual que la anterior (que ya estaba bien con el videoId)
 async function prepararDescarga(id, titulo) {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = `
         <div class="text-center py-20">
             <div class="animate-spin inline-block w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full mb-6"></div>
-            <h2 class="text-xl font-bold text-white uppercase">Procesando MP3</h2>
-            <p class="text-cyan-400 animate-pulse">${titulo}</p>
+            <p class="text-cyan-400">Generando enlace de descarga...</p>
         </div>`;
 
     try {
+        // Usamos la ruta exacta del CURL que funcionó
         const url = `https://${API_HOST}/v2/video/details?videoId=${id}&urlAccess=normal&videos=auto&audios=auto`;
         const response = await fetch(url, {
             method: 'GET',
@@ -97,12 +83,13 @@ async function prepararDescarga(id, titulo) {
         });
 
         const data = await response.json();
-        let audioUrl = "";
         
-        if (data.audios?.items?.length > 0) {
+        // Buscamos el audio en la nueva estructura que vimos en el CURL
+        let audioUrl = "";
+        if (data.audios && data.audios.items && data.audios.items.length > 0) {
             audioUrl = data.audios.items[0].url;
         } else if (data.formats) {
-            const format = data.formats.find(f => f.mimeType?.includes('audio'));
+            const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio'));
             audioUrl = format ? format.url : data.formats[0].url;
         }
 
@@ -119,11 +106,11 @@ async function prepararDescarga(id, titulo) {
                     <button onclick="window.location.reload()" class="mt-8 text-xs text-gray-500 hover:text-white uppercase tracking-widest underline italic">Nueva búsqueda</button>
                 </div>`;
         } else {
-            alert("No se encontró el link de audio.");
+            alert("No se pudo obtener el audio directo. Intenta con otro video.");
             window.location.reload();
         }
     } catch (e) {
-        alert("Error en el servidor de descarga.");
+        alert("Error al procesar la descarga.");
         window.location.reload();
     }
 }
