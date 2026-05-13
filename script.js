@@ -13,20 +13,32 @@ async function buscarMusica() {
             <p class="text-cyan-400 font-bold uppercase tracking-widest text-[10px]">Zyncx Search Engine: Buscando...</p>
         </div>`;
 
+    // Lista de rutas posibles para la búsqueda
+    const rutasBusqueda = [
+        `https://${API_HOST}/v2/search?q=${encodeURIComponent(query)}`,
+        `https://${API_HOST}/v2/video/search?q=${encodeURIComponent(query)}`
+    ];
+
+    let data = null;
+
     try {
-        // Usamos la ruta de búsqueda estándar
-        const response = await fetch(`https://${API_HOST}/v2/video/search?q=${encodeURIComponent(query)}`, {
-            method: 'GET',
-            headers: {
-                'x-rapidapi-key': API_KEY,
-                'x-rapidapi-host': API_HOST
-            }
-        });
+        // Intentamos con las rutas disponibles
+        for (let url of rutasBusqueda) {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-key': API_KEY,
+                    'x-rapidapi-host': API_HOST
+                }
+            });
+            data = await response.json();
+            
+            // Si encontramos items, rompemos el ciclo
+            if (data.items || data.contents) break;
+        }
 
-        const data = await response.json();
         resultsContainer.innerHTML = "";
-
-        const videos = data.items || data.contents;
+        const videos = data.items || data.contents || data.videos;
 
         if (videos && videos.length > 0) {
             videos.forEach(video => {
@@ -53,10 +65,10 @@ async function buscarMusica() {
                 }
             });
         } else {
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados.</p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados. <br> Intenta con otra palabra clave.</p>`;
         }
     } catch (error) {
-        resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de conexión.</p>`;
+        resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de conexión con la API.</p>`;
     }
 }
 
@@ -70,7 +82,7 @@ async function prepararDescarga(id, titulo) {
         </div>`;
 
     try {
-        // AJUSTE CLAVE: Usamos exactamente los parámetros del curl que me pasaste
+        // Usamos la URL exacta que nos dio tu comando CURL
         const url = `https://${API_HOST}/v2/video/details?videoId=${id}&urlAccess=normal&videos=auto&audios=auto`;
         
         const response = await fetch(url, {
@@ -85,12 +97,12 @@ async function prepararDescarga(id, titulo) {
         const data = await response.json();
         let audioUrl = "";
         
-        // Buscamos en el array de audios que nos devuelve esta configuración
+        // Buscamos el link en el nuevo formato
         if (data.audios && data.audios.items && data.audios.items.length > 0) {
             audioUrl = data.audios.items[0].url;
         } else if (data.formats) {
             const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio'));
-            audioUrl = format ? format.url : null;
+            audioUrl = format ? format.url : data.formats[0].url;
         }
 
         if (audioUrl) {
@@ -100,13 +112,13 @@ async function prepararDescarga(id, titulo) {
                         <i class="fas fa-check text-green-400 text-2xl"></i>
                     </div>
                     <h3 class="text-lg font-bold mb-8 text-white">${titulo}</h3>
-                    <a href="${audioUrl}" target="_blank" download="${titulo}.mp3" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40">
+                    <a href="${audioUrl}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold py-5 px-12 rounded-2xl transition-all hover:scale-105 inline-block shadow-lg shadow-cyan-500/40 text-center">
                         <i class="fas fa-cloud-download-alt mr-2"></i> DESCARGAR MP3
                     </a>
                     <button onclick="window.location.reload()" class="mt-8 text-xs text-gray-500 hover:text-white uppercase tracking-widest underline italic">Nueva búsqueda</button>
                 </div>`;
         } else {
-            alert("No se encontró un link de descarga. Intenta con otro video.");
+            alert("No se encontró un link de audio directo.");
             window.location.reload();
         }
     } catch (e) {
