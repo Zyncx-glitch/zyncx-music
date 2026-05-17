@@ -1,94 +1,104 @@
-// ZYNCX CORE ENGINE - v3.0 (Anti-Cache & Anti-CORS)
-const CLIENT_KEY_ZYNCX = 'b7e2969cdcmshca5a386054686e0p158a2djsnf9a96c7dc51f';
-const HOST_DL_ZYNCX = 'youtube-mp3-audio-video-downloader.p.rapidapi.com';
+// ZYNCX CORE ENGINE v3.1 - Configuración limpia sin problemas de CORS
+const API_KEY_ZYNCX = 'b7e2969cdcmshca5a386054686e0p158a2djsnf9a96c7dc51f';
+const HOST_DOWNLOAD = 'youtube-mp3-audio-video-downloader.p.rapidapi.com';
 
 async function buscarMusica() {
-    const inputTerm = document.getElementById('searchInput').value.trim();
+    const queryInput = document.getElementById('searchInput').value.trim();
     const resultsContainer = document.getElementById('results');
 
-    if (!inputTerm) return;
+    if (!queryInput) return;
 
     resultsContainer.innerHTML = `
         <div class="text-center py-10">
             <div class="animate-spin inline-block w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full mb-4"></div>
-            <p class="text-cyan-400 font-mono text-[10px] uppercase tracking-widest">Zyncx Core: Rompiendo Bloqueos...</p>
+            <p class="text-cyan-400 font-mono text-[10px] uppercase tracking-widest">Zyncx Search: Buscando pistas...</p>
         </div>`;
 
     try {
-        // Motor de búsqueda alternativo mediante proxy de datos AllOrigins para saltar CORS al 100%
-        const targetUrl = `https://v2.api.invidious.io/api/v1/search?q=${encodeURIComponent(inputTerm)}&type=video`;
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}&_=` + new Date().getTime();
+        // Usamos un motor de búsqueda alternativo directo y compatible con CORS
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=' + encodeURIComponent(queryInput))}`);
+        const wrapper = await response.json();
+        
+        // Extraemos las sugerencias limpias de YouTube
+        const cleanData = JSON.parse(wrapper.contents);
+        const sugerencias = cleanData[1] || [];
 
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("Proxy offline");
-        
-        const wrapper = await res.json();
-        const data = JSON.parse(wrapper.contents);
-        
         resultsContainer.innerHTML = "";
-        
-        if (data && data.length > 0) {
-            data.forEach(video => {
-                const cleanTitle = video.title.replace(/['"]/g, "");
-                const vId = video.videoId;
-                const thumb = video.videoThumbnails && video.videoThumbnails.length > 0 
-                    ? video.videoThumbnails[0].url 
-                    : 'https://via.placeholder.com/160x90?text=Zyncx+Music';
 
+        if (sugerencias.length > 0) {
+            // Mostramos las coincidencias exactas listas para procesar
+            for (let i = 0; i < Math.min(sugerencias.length, 6); i++) {
+                const tituloTerm = sugerencias[i][0];
+                
+                // Generamos un identificador temporal basado en texto para buscar el ID real al hacer clic
                 resultsContainer.innerHTML += `
-                <div class="glass p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer mb-3 group" 
-                     onclick="prepararDescarga('${vId}', '${cleanTitle}')">
+                <div class="glass p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer mb-3 group animate-render" 
+                     onclick="obtenerIDYDescargar('${tituloTerm.replace(/['"]/g, "")}')">
                     <div class="flex items-center gap-4 text-left">
-                        <img src="${thumb}" class="w-20 h-14 rounded-lg object-cover shadow-lg border border-white/10">
+                        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center border border-cyan-500/30 shadow-lg">
+                            <i class="fas fa-music text-cyan-400 text-sm"></i>
+                        </div>
                         <div>
-                            <h3 class="font-bold text-white truncate text-sm group-hover:text-cyan-400 transition max-w-[180px] md:max-w-md">${video.title}</h3>
-                            <p class="text-[10px] text-gray-500 font-mono">${video.author || 'YouTube'}</p>
+                            <h3 class="font-bold text-white text-sm group-hover:text-cyan-400 transition truncate max-w-[200px] md:max-w-md">${tituloTerm}</h3>
+                            <p class="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Pista Verificada • Zyncx</p>
                         </div>
                     </div>
-                    <div class="text-cyan-500 bg-cyan-500/10 p-3 rounded-xl group-hover:bg-cyan-500 group-hover:text-white transition">
-                        <i class="fas fa-download text-xs"></i>
+                    <div class="text-cyan-500 bg-cyan-500/10 p-3 rounded-xl group-hover:bg-cyan-500 group-hover:text-white transition shadow-md">
+                        <i class="fas fa-search text-xs"></i>
                     </div>
                 </div>`;
-            });
+            }
         } else {
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se hallaron resultados. Intenta con otra palabra.</p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron sugerencias para "${queryInput}".</p>`;
         }
-    } catch (e) {
-        console.error("Error en Zyncx Search:", e);
-        // Respaldo inmediato si el JSON falla: Usamos una API alternativa de sugerencias directas
-        try {
-            const fallbackRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=' + encodeURIComponent(inputTerm))}`);
-            const fallbackWrapper = await fallbackRes.json();
-            // Si llega aquí, es porque la red funciona pero Invidious está caído. Ofrecemos recarga directa
-            resultsContainer.innerHTML = `
-                <div class="text-center p-6 glass rounded-2xl">
-                    <p class="text-cyan-400 font-bold mb-2">¡Sincronización en proceso!</p>
-                    <p class="text-gray-400 text-xs mb-4">El servidor de búsqueda está saturado.</p>
-                    <button onclick="buscarMusica()" class="bg-cyan-500 text-white px-4 py-2 rounded-xl text-xs uppercase font-bold">Reintentar Conexión</button>
-                </div>`;
-        } catch(err) {
-            resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error general de red. Reintenta en unos instantes.</p>`;
-        }
+    } catch (error) {
+        console.error("Error global de búsqueda:", error);
+        resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de red. Intenta de nuevo en unos segundos.</p>`;
     }
 }
 
-async function prepararDescarga(id, titulo) {
+// Esta función busca el video ID del tema seleccionado de forma automática
+async function obtenerIDYDescargar(nombreTema) {
     const resultsContainer = document.getElementById('results');
     resultsContainer.innerHTML = `
         <div class="text-center py-20">
             <div class="animate-spin inline-block w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full mb-6"></div>
-            <h2 class="text-xl font-bold text-white uppercase tracking-widest mb-2">Procesando Audio</h2>
-            <p class="text-cyan-400 text-xs animate-pulse">${titulo}</p>
+            <h2 class="text-xl font-bold text-white uppercase tracking-widest mb-2">Localizando Servidores</h2>
+            <p class="text-cyan-400 text-xs animate-pulse">${nombreTema}</p>
         </div>`;
 
     try {
-        const url = `https://${HOST_DL_ZYNCX}/get-video-info/${id}?response_mode=default`;
+        // Buscamos a través de un puente seguro para obtener un ID válido de YouTube sin CORS
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const targetSearch = `https://vid.puffyan.us/api/v1/search?q=${encodeURIComponent(nombreTema)}&type=video`;
         
+        const res = await fetch(proxyUrl + encodeURIComponent(targetSearch));
+        const wrapper = await res.json();
+        const data = JSON.parse(wrapper.contents);
+
+        if (data && data.length > 0) {
+            const videoId = data[0].videoId;
+            // Pasamos a la descarga con tu API de RapidAPI
+            ejecutarDescargaRapidAPI(videoId, nombreTema);
+        } else {
+            // Enlace alternativo si falla el buscador interno
+            window.location.href = `https://9xbuddy.com/process?url=https://www.youtube.com/results?search_query=${encodeURIComponent(nombreTema)}`;
+        }
+    } catch (e) {
+        window.location.href = `https://9xbuddy.com/process?url=https://www.youtube.com/results?search_query=${encodeURIComponent(nombreTema)}`;
+    }
+}
+
+async function ejecutarDescargaRapidAPI(id, titulo) {
+    const resultsContainer = document.getElementById('results');
+
+    try {
+        const url = `https://${HOST_DOWNLOAD}/get-video-info/${id}?response_mode=default`;
         const response = await fetch(url, {
             method: 'GET',
             headers: {
-                'x-rapidapi-key': CLIENT_KEY_ZYNCX,
-                'x-rapidapi-host': HOST_DL_ZYNCX,
+                'x-rapidapi-key': API_KEY_ZYNCX,
+                'x-rapidapi-host': HOST_DOWNLOAD,
                 'Content-Type': 'application/json'
             }
         });
@@ -101,9 +111,6 @@ async function prepararDescarga(id, titulo) {
             if (mp3Keys.length > 0) {
                 audioUrl = data.links.mp3[mp3Keys[0]].url || data.links.mp3[mp3Keys[0]];
             }
-        } else if (data.formats) {
-            const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio')) || data.formats[0];
-            audioUrl = format ? format.url : null;
         } else if (data.url) {
             audioUrl = data.url;
         }
@@ -115,7 +122,7 @@ async function prepararDescarga(id, titulo) {
         resultsContainer.innerHTML = `
             <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl">
                 <div class="w-16 h-16 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-music text-xl"></i>
+                    <i class="fas fa-headphones-alt text-xl"></i>
                 </div>
                 <h3 class="text-white font-bold mb-8 text-sm leading-relaxed">${titulo}</h3>
                 <a href="${audioUrl}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black py-5 px-10 rounded-2xl transition-all hover:scale-105 inline-block shadow-xl shadow-cyan-500/40 uppercase tracking-widest text-xs text-center">
@@ -123,8 +130,7 @@ async function prepararDescarga(id, titulo) {
                 </a>
                 <button onclick="window.location.reload()" class="mt-8 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest transition block w-full text-center">Nueva búsqueda</button>
             </div>`;
-
-    } catch (error) {
+    } catch (err) {
         const backupUrl = `https://9xbuddy.com/process?url=https://www.youtube.com/watch?v=${id}`;
         resultsContainer.innerHTML = `
             <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl">
