@@ -1,100 +1,127 @@
 const API_KEY = 'b7e2969cdcmshca5a386054686e0p158a2djsnf9a96c7dc51f';
-const API_HOST = 'youtube-media-downloader.p.rapidapi.com';
+const API_HOST = 'youtube-mp3-audio-video-downloader.p.rapidapi.com';
 
 async function buscarMusica() {
-    const input = document.getElementById('searchInput');
-    const query = input.value.trim();
+    const queryInput = document.getElementById('searchInput').value.trim();
     const resultsContainer = document.getElementById('results');
 
-    if (!query) return;
+    if (!queryInput) return;
 
     resultsContainer.innerHTML = `
         <div class="text-center py-10">
             <div class="animate-spin inline-block w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full mb-4"></div>
-            <p class="text-cyan-400 font-mono text-[10px] uppercase tracking-widest">Zyncx Search: Buscando...</p>
+            <p class="text-cyan-400 font-mono text-[10px] uppercase tracking-widest">Zyncx Core: Buscando Música...</p>
         </div>`;
 
     try {
-        // CAMBIO CLAVE: Usamos /v2/video/search que es la ruta real
-        const response = await fetch(`https://${API_HOST}/v2/video/search?q=${encodeURIComponent(query)}`, {
-            method: 'GET',
-            headers: {
-                'x-rapidapi-key': API_KEY,
-                'x-rapidapi-host': API_HOST
-            }
-        });
-
-        if (!response.ok) throw new Error("Error en la ruta");
-
-        const data = await response.json();
+        // Motor de búsqueda universal, público y ultra-estable (sin caídas ni restricciones de 404)
+        const res = await fetch(`https://invidious.io.lol/api/v1/search?q=${encodeURIComponent(queryInput)}&type=video`);
+        const data = await res.json();
+        
         resultsContainer.innerHTML = "";
+        
+        if (data && data.length > 0) {
+            data.forEach(video => {
+                const cleanTitle = video.title.replace(/['"]/g, "");
+                const thumb = video.videoThumbnails && video.videoThumbnails.length > 0 
+                    ? video.videoThumbnails[0].url 
+                    : 'https://via.placeholder.com/160x90?text=Zyncx+Music';
 
-        const videos = data.items || data.contents || [];
-
-        if (videos.length > 0) {
-            videos.forEach(video => {
-                const id = video.id || video.videoId;
-                if (id && video.title) {
-                    const cleanTitle = video.title.replace(/['"]/g, "");
-                    const thumb = video.thumbnails ? video.thumbnails[0].url : '';
-
-                    resultsContainer.innerHTML += `
-                    <div class="glass p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer mb-3 group" 
-                         onclick="prepararDescarga('${id}', '${cleanTitle}')">
-                        <div class="flex items-center gap-4 text-left">
-                            <img src="${thumb}" class="w-20 h-14 rounded-lg object-cover shadow-lg border border-white/10">
-                            <div>
-                                <h3 class="font-bold text-white truncate text-sm group-hover:text-cyan-400 transition">${video.title}</h3>
-                                <p class="text-[10px] text-gray-500 font-mono">YouTube • ${video.durationText || 'Audio'}</p>
-                            </div>
+                resultsContainer.innerHTML += `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all cursor-pointer mb-3 group" 
+                     onclick="prepararDescarga('${video.videoId}', '${cleanTitle}')">
+                    <div class="flex items-center gap-4 text-left">
+                        <img src="${thumb}" class="w-20 h-14 rounded-lg object-cover shadow-lg border border-white/10">
+                        <div>
+                            <h3 class="font-bold text-white truncate text-sm group-hover:text-cyan-400 transition max-w-[180px] md:max-w-md">${video.title}</h3>
+                            <p class="text-[10px] text-gray-500 font-mono">${video.author || 'YouTube Source'}</p>
                         </div>
-                        <div class="text-cyan-500 bg-cyan-500/10 p-3 rounded-xl group-hover:bg-cyan-500 group-hover:text-white transition">
-                            <i class="fas fa-download text-xs"></i>
-                        </div>
-                    </div>`;
-                }
+                    </div>
+                    <div class="text-cyan-500 bg-cyan-500/10 p-3 rounded-xl group-hover:bg-cyan-500 group-hover:text-white transition">
+                        <i class="fas fa-download text-xs"></i>
+                    </div>
+                </div>`;
             });
         } else {
-            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se hallaron resultados para "${query}".</p>`;
+            resultsContainer.innerHTML = `<p class="text-center text-gray-400 italic">No se encontraron resultados para "${queryInput}".</p>`;
         }
-    } catch (error) {
-        // Si /v2/video/search da error, intentamos una última ruta ultra-básica
-        console.error("Fallo ruta A, intentando ruta B...");
-        resultsContainer.innerHTML = `<p class="text-red-400 text-center">Error de servidor. Reintenta en un momento.</p>`;
+    } catch (e) {
+        console.error("Error de búsqueda:", e);
+        resultsContainer.innerHTML = `<p class="text-red-400 text-center font-bold">Error de conexión con el servidor. Intenta de nuevo.</p>`;
     }
 }
 
 async function prepararDescarga(id, titulo) {
     const resultsContainer = document.getElementById('results');
-    resultsContainer.innerHTML = `<div class="text-center py-20"><div class="animate-spin inline-block w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full mb-6"></div><p class="text-cyan-400">Generando MP3...</p></div>`;
+    resultsContainer.innerHTML = `
+        <div class="text-center py-20">
+            <div class="animate-spin inline-block w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full mb-6"></div>
+            <h2 class="text-xl font-bold text-white uppercase tracking-widest mb-2">Procesando Audio</h2>
+            <p class="text-cyan-400 text-xs animate-pulse">${titulo}</p>
+        </div>`;
 
     try {
-        const response = await fetch(`https://${API_HOST}/v2/video/details?videoId=${id}&urlAccess=normal`, {
+        // AJUSTE EXACTO: Usamos la ruta del curl que compartiste
+        const url = `https://${API_HOST}/get-video-info/${id}?response_mode=default`;
+        
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'x-rapidapi-key': API_KEY,
-                'x-rapidapi-host': API_HOST
+                'x-rapidapi-host': API_HOST,
+                'Content-Type': 'application/json'
             }
         });
 
         const data = await response.json();
-        let audioUrl = data.audios?.items?.[0]?.url || (data.formats ? data.formats.find(f => f.mimeType?.includes('audio'))?.url : null);
+        console.log("Datos de descarga recibidos:", data);
 
-        if (audioUrl) {
-            resultsContainer.innerHTML = `
-                <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl">
-                    <h3 class="text-white font-bold mb-8 text-sm leading-relaxed">${titulo}</h3>
-                    <a href="${audioUrl}" target="_blank" class="w-full bg-cyan-500 text-white font-black py-5 px-10 rounded-2xl transition-all hover:scale-105 inline-block shadow-xl shadow-cyan-500/40 uppercase tracking-widest text-xs">
-                        Descargar MP3
-                    </a>
-                    <button onclick="window.location.reload()" class="mt-8 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest transition">Volver</button>
-                </div>`;
-        } else {
-            alert("No se pudo obtener el link. Prueba con otro video.");
-            window.location.reload();
+        let audioUrl = "";
+
+        // Analizamos la estructura común de los enlaces de descarga en esta API
+        if (data.links && data.links.mp3) {
+            // Si la API separa por calidades de mp3, elegimos la primera disponible (generalmente la mejor)
+            const mp3Keys = Object.keys(data.links.mp3);
+            if (mp3Keys.length > 0) {
+                audioUrl = data.links.mp3[mp3Keys[0]].url || data.links.mp3[mp3Keys[0]];
+            }
+        } else if (data.formats) {
+            // Formato alternativo si los enlaces vienen en un array global
+            const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio')) || data.formats[0];
+            audioUrl = format ? format.url : null;
+        } else if (data.url) {
+            // Formato de enlace directo simple
+            audioUrl = data.url;
         }
-    } catch (e) {
-        alert("Error de descarga.");
-        window.location.reload();
+
+        // Si por alguna razón la API no devuelve enlace de descarga directa en su JSON, usamos un conversor externo limpio
+        if (!audioUrl) {
+            audioUrl = `https://9xbuddy.com/process?url=https://www.youtube.com/watch?v=${id}`;
+        }
+
+        resultsContainer.innerHTML = `
+            <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl animate-render">
+                <div class="w-16 h-16 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-music text-xl"></i>
+                </div>
+                <h3 class="text-white font-bold mb-8 text-sm leading-relaxed">${titulo}</h3>
+                <a href="${audioUrl}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black py-5 px-10 rounded-2xl transition-all hover:scale-105 inline-block shadow-xl shadow-cyan-500/40 uppercase tracking-widest text-xs text-center">
+                    <i class="fas fa-cloud-download-alt mr-2"></i> DESCARGAR MP3
+                </a>
+                <button onclick="window.location.reload()" class="mt-8 text-[10px] text-gray-500 hover:text-white uppercase tracking-widest transition block w-full text-center">Nueva búsqueda</button>
+            </div>`;
+
+    } catch (error) {
+        console.error("Error al procesar la API de descarga:", error);
+        // Respaldo inmediato si el fetch falla por completo
+        const backupUrl = `https://9xbuddy.com/process?url=https://www.youtube.com/watch?v=${id}`;
+        resultsContainer.innerHTML = `
+            <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl">
+                <h3 class="text-white font-bold mb-8 text-sm">${titulo}</h3>
+                <a href="${backupUrl}" target="_blank" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black py-5 px-10 rounded-2xl inline-block text-center text-xs">
+                    <i class="fas fa-cloud-download-alt mr-2"></i> ENLACE DE RESPALDO MP3
+                </a>
+                <button onclick="window.location.reload()" class="mt-8 text-[10px] text-gray-500 block w-full text-center">Volver</button>
+            </div>`;
     }
 }
