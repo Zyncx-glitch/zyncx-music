@@ -14,7 +14,7 @@ async function buscarMusica() {
         </div>`;
 
     try {
-        // Motor de búsqueda universal, público y ultra-estable (sin caídas ni restricciones de 404)
+        // Motor de búsqueda universal y ultra-estable (Invidious) para evitar errores 404
         const res = await fetch(`https://invidious.io.lol/api/v1/search?q=${encodeURIComponent(queryInput)}&type=video`);
         const data = await res.json();
         
@@ -61,7 +61,7 @@ async function prepararDescarga(id, titulo) {
         </div>`;
 
     try {
-        // AJUSTE EXACTO: Usamos la ruta del curl que compartiste
+        // Usamos la ruta exacta del curl que nos funcionó en el test
         const url = `https://${API_HOST}/get-video-info/${id}?response_mode=default`;
         
         const response = await fetch(url, {
@@ -78,23 +78,20 @@ async function prepararDescarga(id, titulo) {
 
         let audioUrl = "";
 
-        // Analizamos la estructura común de los enlaces de descarga en esta API
+        // Verificamos cómo estructuró los enlaces tu nueva API
         if (data.links && data.links.mp3) {
-            // Si la API separa por calidades de mp3, elegimos la primera disponible (generalmente la mejor)
             const mp3Keys = Object.keys(data.links.mp3);
             if (mp3Keys.length > 0) {
                 audioUrl = data.links.mp3[mp3Keys[0]].url || data.links.mp3[mp3Keys[0]];
             }
         } else if (data.formats) {
-            // Formato alternativo si los enlaces vienen en un array global
             const format = data.formats.find(f => f.mimeType && f.mimeType.includes('audio')) || data.formats[0];
             audioUrl = format ? format.url : null;
         } else if (data.url) {
-            // Formato de enlace directo simple
             audioUrl = data.url;
         }
 
-        // Si por alguna razón la API no devuelve enlace de descarga directa en su JSON, usamos un conversor externo limpio
+        // Si la API no generó el link directo, usamos el conversor de emergencia integrado
         if (!audioUrl) {
             audioUrl = `https://9xbuddy.com/process?url=https://www.youtube.com/watch?v=${id}`;
         }
@@ -113,7 +110,6 @@ async function prepararDescarga(id, titulo) {
 
     } catch (error) {
         console.error("Error al procesar la API de descarga:", error);
-        // Respaldo inmediato si el fetch falla por completo
         const backupUrl = `https://9xbuddy.com/process?url=https://www.youtube.com/watch?v=${id}`;
         resultsContainer.innerHTML = `
             <div class="glass p-10 rounded-[2.5rem] border border-cyan-500/30 text-center max-w-md mx-auto shadow-2xl">
