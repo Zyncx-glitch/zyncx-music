@@ -3,24 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zyncx Media Downloader — Sin Anuncios</title>
+    <title>Zyncx Social Downloader — TikTok e Instagram</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+            background: linear-gradient(135deg, #070a13 0%, #02040a 100%);
             min-height: 100vh;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        .tab-active {
-            background: rgba(6, 182, 212, 0.15);
-            border-color: rgba(6, 182, 212, 0.4);
-            color: #22d3ee;
+        .tab-active-tiktok {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+        }
+        .tab-active-instagram {
+            background: rgba(236, 72, 153, 0.1);
+            border-color: rgba(236, 72, 153, 0.4);
+            color: #f472b6;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.05);
         }
     </style>
 </head>
@@ -28,13 +35,13 @@
 
     <header class="w-full max-w-6xl mx-auto px-6 py-4 flex items-center justify-between border-b border-white/5">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-pink-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
                 <span class="font-black text-white text-sm tracking-tighter">Z</span>
             </div>
-            <span class="font-mono text-xs uppercase tracking-[0.3em] text-white font-bold">Zyncx <span class="text-cyan-400">Media</span></span>
+            <span class="font-mono text-xs uppercase tracking-[0.3em] text-white font-bold">Zyncx <span class="text-pink-500">Media</span></span>
         </div>
         <div class="flex items-center gap-4 text-[10px] uppercase font-mono tracking-widest text-slate-500">
-            <span>v4.2 stable</span>
+            <span>v4.3 social</span>
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         </div>
     </header>
@@ -43,34 +50,31 @@
         
         <div class="text-center mb-10 max-w-lg">
             <h1 class="text-3xl md:text-4xl font-black text-white uppercase tracking-tight mb-3">
-                Descargas <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Multi-Plataforma</span>
+                Zyncx <span class="bg-gradient-to-r from-teal-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">Social Saver</span>
             </h1>
             <p class="text-slate-400 text-xs md:text-sm leading-relaxed">
-                Guarda videos y audios de tus redes favoritas al instante. Sin ventanas emergentes, sin límites y completamente limpio.
+                Descarga videos, reels y audios de TikTok e Instagram en alta calidad. Sin anuncios molestos, directo a tu almacenamiento.
             </p>
         </div>
 
-        <div class="grid grid-cols-3 gap-3 w-full max-w-md mb-6">
-            <button onclick="cambiarPlataforma('youtube', 'https://www.youtube.com/watch?v=...')" id="btn-youtube" class="tab-active glass py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border text-xs font-medium">
-                <i class="fab fa-youtube text-lg text-red-500"></i> YouTube
+        <div class="grid grid-cols-2 gap-4 w-full max-w-sm mb-6">
+            <button onclick="cambiarPlataforma('tiktok')" id="btn-tiktok" class="tab-active-tiktok glass py-3 rounded-xl flex items-center justify-center gap-2 transition-all border text-xs font-bold uppercase tracking-wider">
+                <i class="fab fa-tiktok text-sm"></i> TikTok
             </button>
-            <button onclick="cambiarPlataforma('tiktok', 'https://www.tiktok.com/@user/video/...')" id="btn-tiktok" class="glass py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border border-transparent text-slate-400 text-xs font-medium">
-                <i class="fab fa-tiktok text-lg text-white"></i> TikTok
-            </button>
-            <button onclick="cambiarPlataforma('instagram', 'https://www.instagram.com/reel/...')" id="btn-instagram" class="glass py-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all border border-transparent text-slate-400 text-xs font-medium">
-                <i class="fab fa-instagram text-lg text-pink-500"></i> Instagram
+            <button onclick="cambiarPlataforma('instagram')" id="btn-instagram" class="glass py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-transparent text-slate-500 text-xs font-bold uppercase tracking-wider">
+                <i class="fab fa-instagram text-sm"></i> Instagram
             </button>
         </div>
 
-        <div class="w-full max-w-xl glass p-3 rounded-2xl flex items-center shadow-2xl focus-within:border-cyan-500/40 transition-all mb-8">
-            <div class="pl-3 text-slate-500 text-sm">
-                <i id="input-icon" class="fab fa-youtube text-red-500"></i>
+        <div class="w-full max-w-xl glass p-3 rounded-2xl flex items-center shadow-2xl transition-all mb-8 border border-white/5" id="search-box-wrapper">
+            <div class="pl-3 text-white text-sm flex items-center justify-center w-5">
+                <i id="input-icon" class="fab fa-tiktok"></i>
             </div>
             <input type="text" id="searchInput" 
-                   placeholder="Pega el enlace de YouTube aquí..." 
+                   placeholder="Pega el enlace de TikTok aquí..." 
                    class="w-full bg-transparent border-0 outline-none px-4 py-3 text-sm text-white placeholder-slate-600 font-medium">
-            <button onclick="procesarEnlaceZyncx()" class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl hover:opacity-90 active:scale-95 transition shadow-lg shadow-cyan-500/10">
-                Analizar
+            <button onclick="procesarEnlaceZyncx()" class="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs uppercase tracking-widest px-6 py-3.5 rounded-xl hover:opacity-90 active:scale-95 transition shadow-lg shadow-pink-500/10">
+                Guardar
             </button>
         </div>
 
@@ -79,9 +83,9 @@
     </main>
 
     <footer class="w-full text-center py-6 border-t border-white/5 text-[10px] font-mono tracking-widest text-slate-600 uppercase">
-        &copy; 2026 Zyncx Trilogy — Todos los derechos reservados.
+        &copy; 2026 Zyncx Trilogy — Segunda Entrega.
     </footer>
 
-    <script src="script.js?v=4.2"></script>
+    <script src="script.js?v=4.3"></script>
 </body>
 </html>
