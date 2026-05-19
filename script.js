@@ -46,3 +46,18 @@ async function procesarEnlaceZyncx(urlUsuario) {
         mostrarCargando(false);
     }
 }
+// Función para mostrar u ocultar el estado de carga en la interfaz
+function mostrarCargando(activado) {
+    // Buscamos un contenedor en tu HTML donde mostrar el mensaje (puedes ajustar el ID según tu HTML)
+    const contenedorResultado = document.getElementById("resultado-descarga");
+    
+    if (activado) {
+        if (contenedorResultado) {
+            contenedorResultado.innerHTML = `
+                <div style="color: #00f2fe; font-family: sans-serif; font-weight: bold; padding: 20px; text-align: center; animate: pulse 1s infinite;">
+                    🚀 Zyncx Engine procesando enlace... Dame un segundo, bro.
+                </div>
+            `;
+        }
+    }
+}
