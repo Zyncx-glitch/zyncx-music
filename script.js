@@ -1,5 +1,5 @@
 // Configuración de la API Puente para Zyncx
-const RAPIDAPI_KEY = "TU_LLAVE_DE_RAPIDAPI"; // <-- PEGA AQUÍ TU LLAVE DE RAPIDAPI
+const RAPIDAPI_KEY = "b7e2969cdcmshca5a386054686e0p158a2djsnf9a96c7dc51f"; // <-- PEGA AQUÍ TU LLAVE DE RAPIDAPI
 const RAPIDAPI_HOST = "tiktok-video-downloader-no-watermark.p.rapidapi.com"; // O el host de la API que elijas
 
 async function procesarEnlaceZyncx(urlUsuario) {
