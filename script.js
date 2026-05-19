@@ -12,27 +12,27 @@ let plataformaActual = 'tiktok';
 // ==========================================
 async function procesarEnlaceZyncx() {
     try {
-        // Capturamos la barra de búsqueda de tu HTML (id="searchInput")
         const inputUsuario = document.getElementById("searchInput");
         if (!inputUsuario) return;
 
         const urlUsuario = inputUsuario.value.trim();
 
-        // Validación de barra vacía
         if (!urlUsuario) {
             alert("Por favor, pega un enlace de TikTok primero, bro.");
             return;
         }
 
-        // Activamos la animación de carga premium en tu contenedor id="results"
         mostrarCargando(true); 
-        console.log("Zyncx Engine: Conectando con API de 7sCORP para ->", urlUsuario);
+        console.log("Zyncx Engine: Conectando a través del túnel comunitario seguro...");
 
-        // Usamos el ENDPOINT EXACTO que nos dio tu comando curl: /rich_response/index
-        const respuesta = await fetch(`https://${RAPIDAPI_HOST}/rich_response/index?url=${encodeURIComponent(urlUsuario)}`, {
+        // Usamos el nuevo proxy que encontraste sin restricciones de activación
+        const proxyUrl = "https://cors-anywhere.com/";
+        const apiTarget = `https://${RAPIDAPI_HOST}/rich_response/index?url=${encodeURIComponent(urlUsuario)}`;
+
+        // Pegamos el proxy antes de la URL de RapidAPI
+        const respuesta = await fetch(proxyUrl + apiTarget, {
             method: "GET",
             headers: {
-                "Content-Type": "application/json",
                 "x-rapidapi-key": RAPIDAPI_KEY,
                 "x-rapidapi-host": RAPIDAPI_HOST
             }
@@ -45,26 +45,18 @@ async function procesarEnlaceZyncx() {
         const data = await respuesta.json();
         console.log("Zyncx Engine: Datos crudos recibidos", data);
 
-        // Al usar 'rich_response', la API suele estructurar todo dentro de un objeto 'data' o directo en la raíz.
-        // Inspeccionamos las variantes comunes de 7sCORP:
         const info = data.data || data;
 
-        // Validamos que existan flujos de descarga
         if (info) {
-            // Buscamos el link del video limpio sin logo. Esta API suele llamarlo 'video', 'nowatermark' o venir en una lista de 'links'
             const videoLimpio = info.video || info.nowatermark || (info.links && info.links.find(l => l.type === 'video')?.url) || info.url;
-            // Buscamos la pista de música MP3
             const audioLimpio = info.music || info.audio || (info.links && info.links.find(l => l.type === 'audio')?.url) || "";
-            // Buscamos la carátula o foto del creador
             const coverVideo = info.cover || info.dynamic_cover || "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=150";
-            // Buscamos el título o descripción del video
             const tituloVideo = info.title || info.description || "Video de TikTok Sin Marca de Agua";
 
             if (!videoLimpio) {
                 throw new Error("No se encontró un enlace de video directo en la respuesta.");
             }
 
-            // Pintamos el resultado en la interfaz con diseño Glassmorphism
             mostrarTarjetaDescarga({
                 titulo: tituloVideo,
                 cover: coverVideo,
@@ -78,9 +70,8 @@ async function procesarEnlaceZyncx() {
 
     } catch (error) {
         console.error("Zyncx Error Log:", error);
-        alert(`Zyncx Engine Falló: ${error.message}.`);
+        alert(`Zyncx Engine: ${error.message}`);
     } finally {
-        // Apagamos el estado de carga pase lo que pase
         mostrarCargando(false);
     }
 }
@@ -96,7 +87,7 @@ function mostrarCargando(activado) {
         contenedorResultado.innerHTML = `
             <div class="glass rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center gap-3 animate-pulse">
                 <i class="fas fa-circle-notch animate-spin text-2xl text-teal-400"></i>
-                <span class="text-xs font-mono uppercase tracking-widest text-slate-400">Zyncx Engine extrayendo video limpio...</span>
+                <span class="text-xs font-mono uppercase tracking-widest text-slate-400">Zyncx Engine rompiendo cifrado...</span>
             </div>
         `;
     }
@@ -106,12 +97,10 @@ function mostrarTarjetaDescarga(media) {
     const contenedor = document.getElementById("results");
     if (!contenedor) return;
     
-    // Si la API nos dio audio, inyectamos el botón de MP3, si no, lo ocultamos
     const btnAudioHTML = media.url_audio 
         ? `<a href="${media.url_audio}" download target="_blank" class="bg-white/5 hover:bg-white/10 text-white font-medium text-xs uppercase tracking-wider px-5 py-3 rounded-xl border border-white/10 active:scale-95 transition cursor-pointer"><i class="fas fa-music mr-1.5 text-pink-500"></i> Bajar MP3</a>`
         : "";
 
-    // Inyectamos el diseño Premium, limpio y adaptado 100% a tus clases de Tailwind CSS
     contenedor.innerHTML = `
         <div class="glass p-5 rounded-2xl flex flex-col sm:flex-row items-center gap-5 border border-white/10 shadow-2xl animate-fade-in">
             <img src="${media.cover}" alt="Cover Zyncx" class="w-24 h-24 object-cover rounded-xl shadow-lg border border-white/10 flex-shrink-0">
@@ -128,7 +117,6 @@ function mostrarTarjetaDescarga(media) {
     `;
 }
 
-// Función temporal para mantener la compatibilidad con el botón de IG del HTML
 function cambiarPlataforma(plataforma) {
     if (plataforma === 'instagram') {
         alert("Modo Instagram en desarrollo, bro. ¡Primero dejamos perfecto TikTok!");
